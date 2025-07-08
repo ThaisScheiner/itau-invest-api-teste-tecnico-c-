@@ -1,0 +1,141 @@
+﻿openapi: "3.1.0"
+info:
+  title: API de Investimentos Itau
+  version: 1.0.0
+  description: Consulta de posicoes e preco medio de ativos
+
+paths:
+  /api/investimentos/preco-medio/{usuarioId}/{ativoId}:
+    get:
+      summary: Retorna o preco medio de compra de um ativo para um usuario
+      parameters:
+        - name: usuarioId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: ativoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Preco medio encontrado
+          content:
+            application/json:
+              schema:
+                type: number
+                format: decimal
+        '400':
+          description: Erro de entrada
+
+  /api/investimentos/posicao/{usuarioId}/{ativoId}:
+    get:
+      summary: Retorna a posicao atual do cliente no ativo
+      parameters:
+        - name: usuarioId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: ativoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Posicao encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Posicao'
+
+  /api/investimentos/ultima-cotacao/{ativoId}:
+    get:
+      summary: Retorna a ultima cotacao conhecida do ativo
+      parameters:
+        - name: ativoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Cotacao encontrada
+          content:
+            application/json:
+              schema:
+                type: number
+                format: decimal
+
+  /api/investimentos/corretagem-total/{usuarioId}:
+    get:
+      summary: Retorna o total de corretagem paga pelo usuario
+      parameters:
+        - name: usuarioId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Total de corretagem
+          content:
+            application/json:
+              schema:
+                type: number
+                format: decimal
+
+  /api/investimentos/top10-posicao:
+    get:
+      summary: Retorna os 10 clientes com maiores posicoes (valor total)
+      responses:
+        '200':
+          description: Lista de clientes com valor total por posicao
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    usuarioId:
+                      type: integer
+                    valorTotal:
+                      type: number
+
+  /api/investimentos/top10-corretagem:
+    get:
+      summary: Retorna os 10 clientes que mais pagaram corretagem
+      responses:
+        '200':
+          description: Lista de clientes com total de corretagem
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    usuarioId:
+                      type: integer
+                    totalCorretagem:
+                      type: number
+
+components:
+  schemas:
+    Posicao:
+      type: object
+      properties:
+        usuarioId:
+          type: integer
+        ativoId:
+          type: integer
+        quantidade:
+          type: integer
+        precoMedio:
+          type: number
+        pl:
+          type: number

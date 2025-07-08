@@ -6,6 +6,23 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// --- CÓDIGO A SER ADICIONADO (INÍCIO) ---
+// Define uma política de CORS específica para permitir que o front-end Angular
+// que rodará na porta 4200 possa acessar a API.
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy =>
+                      {
+                          policy.WithOrigins("http://localhost:4200") // A porta padrão do Angular
+                                .AllowAnyHeader()
+                                .AllowAnyMethod();
+                      });
+});
+// --- CÓDIGO A SER ADICIONADO (FIM) ---
+
+
 // Adiciona os serviços ao container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -17,13 +34,9 @@ builder.Services.AddDbContext<InvestDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
 );
 
-// --- REGISTRO DOS SERVIÇOS ---
-// Registra os serviços da camada de aplicação
+// Registra os serviços e workers
 builder.Services.AddScoped<PosicaoService>();
-builder.Services.AddScoped<CotacaoService>(); // Adiciona o novo serviço de cotação
-
-// --- REGISTRO DOS WORKERS ---
-// Registra ambos os workers para rodarem em segundo plano
+builder.Services.AddScoped<CotacaoService>();
 builder.Services.AddHostedService<PosicaoWorker>();
 builder.Services.AddHostedService<CotacaoWorker>();
 
@@ -50,6 +63,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// --- CÓDIGO A SER ADICIONADO ---
+// Habilita a política de CORS que definimos acima.
+app.UseCors(MyAllowSpecificOrigins);
+// --- FIM DO CÓDIGO A SER ADICIONADO ---
+
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

@@ -1,4 +1,5 @@
 ﻿using ItauInvest.API.Domain.Entities;
+using ItauInvest.API.DTO.Rankings;
 using ItauInvest.API.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,18 +14,48 @@ namespace ItauInvest.Application.Services
             _context = context;
         }
 
-        // Este método é chamado pelo Kafka Worker para atualizar a posição no banco.
+        // --- MÉTODO ATUALIZADO ---
+        // Agora retorna uma lista de TopPosicaoDto a partir do seu novo namespace.
+        public async Task<List<TopPosicaoDto>> ObterTop10PorPosicaoAsync()
+        {
+            return await _context.Operacoes
+                .Where(o => o.TipoOperacao == "Compra")
+                .GroupBy(o => o.UsuarioId)
+                .Select(g => new TopPosicaoDto // Cria o objeto DTO
+                {
+                    UsuarioId = g.Key,
+                    ValorTotal = g.Sum(o => o.Quantidade * o.PrecoUnitario)
+                })
+                .OrderByDescending(x => x.ValorTotal)
+                .Take(10)
+                .ToListAsync();
+        }
+
+        // --- MÉTODO ATUALIZADO ---
+        // Agora retorna uma lista de TopCorretagemDto a partir do seu novo namespace.
+        public async Task<List<TopCorretagemDto>> ObterTop10PorCorretagemAsync()
+        {
+            return await _context.Operacoes
+                .GroupBy(o => o.UsuarioId)
+                .Select(g => new TopCorretagemDto // Cria o objeto DTO
+                {
+                    UsuarioId = g.Key,
+                    TotalCorretagem = g.Sum(o => o.Corretagem)
+                })
+                .OrderByDescending(x => x.TotalCorretagem)
+                .Take(10)
+                .ToListAsync();
+        }
+
+        // --- O resto dos seus métodos permanecem iguais ---
         public async Task RecalcularESalvarPosicaoAsync(long usuarioId, long ativoId)
         {
-            // 1. Calcula a nova posição em memória
             var novaPosicao = await CalcularPosicaoAsync(usuarioId, ativoId);
             if (novaPosicao == null) return;
 
-            // 2. Procura por uma posição existente no banco para este usuário/ativo
             var posicaoExistente = await _context.Posicoes
                 .FirstOrDefaultAsync(p => p.UsuarioId == usuarioId && p.AtivoId == ativoId);
 
-            // 3. Se existir, atualiza. Se não, adiciona.
             if (posicaoExistente != null)
             {
                 posicaoExistente.Quantidade = novaPosicao.Quantidade;
@@ -34,16 +65,11 @@ namespace ItauInvest.Application.Services
             }
             else
             {
-                // Adiciona a nova posição se ela não existir
                 await _context.Posicoes.AddAsync(novaPosicao);
             }
-
-            // 4. Salva as alterações no banco de dados.
             await _context.SaveChangesAsync();
         }
 
-        // --- MÉTODO FALTANTE ADICIONADO AQUI ---
-        // Encontra todos os usuários que têm uma posição em um determinado ativo e recalcula
         public async Task RecalcularPosicoesPorAtivoAsync(long ativoId)
         {
             var usuariosComPosicao = await _context.Posicoes
@@ -108,46 +134,6 @@ namespace ItauInvest.Application.Services
                 .OrderByDescending(c => c.DataHora)
                 .FirstOrDefaultAsync();
             return cotacao?.PrecoUnitario ?? 0;
-        }
-
-        public async Task<decimal> CalcularTotalCorretagemAsync(long usuarioId)
-        {
-            return await _context.Operacoes
-                .Where(o => o.UsuarioId == usuarioId)
-                .SumAsync(o => o.Corretagem);
-        }
-
-        public async Task<List<(long usuarioId, decimal valorTotal)>> ObterTop10PorPosicaoAsync()
-        {
-            var agrupado = await _context.Operacoes
-                .Where(o => o.TipoOperacao == "Compra")
-                .GroupBy(o => o.UsuarioId)
-                .Select(g => new
-                {
-                    UsuarioId = g.Key,
-                    ValorTotal = g.Sum(o => o.Quantidade * o.PrecoUnitario)
-                })
-                .OrderByDescending(x => x.ValorTotal)
-                .Take(10)
-                .ToListAsync();
-
-            return agrupado.Select(x => (x.UsuarioId, x.ValorTotal)).ToList();
-        }
-
-        public async Task<List<(long usuarioId, decimal totalCorretagem)>> ObterTop10PorCorretagemAsync()
-        {
-            var agrupado = await _context.Operacoes
-                .GroupBy(o => o.UsuarioId)
-                .Select(g => new
-                {
-                    UsuarioId = g.Key,
-                    Total = g.Sum(o => o.Corretagem)
-                })
-                .OrderByDescending(x => x.Total)
-                .Take(10)
-                .ToListAsync();
-
-            return agrupado.Select(x => (x.UsuarioId, x.Total)).ToList();
         }
     }
 }
