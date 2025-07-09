@@ -1,4 +1,5 @@
 ﻿using ItauInvest.API.Domain.Entities;
+using ItauInvest.API.DTO.Operacoes;
 using ItauInvest.API.DTO.Rankings;
 using ItauInvest.API.Infrastructure.Data;
 using ItauInvest.Application.Services;
@@ -20,34 +21,51 @@ namespace ItauInvest.API.Controllers
             _context = context;
         }
 
-        // --- MÉTODO ATUALIZADO ---
-        // A assinatura do método agora usa o DTO importado.
-        [HttpGet("top10-posicao")]
-        public async Task<ActionResult<List<TopPosicaoDto>>> GetTop10ClientesPorPosicao()
+        // --- ENDPOINTS GET QUE ESTAVAM A FALTAR ---
+
+        [HttpGet("preco-medio/{usuarioId}/{ativoId}")]
+        public async Task<ActionResult<decimal>> GetPrecoMedio(long usuarioId, long ativoId)
         {
-            var lista = await _posicaoService.ObterTop10PorPosicaoAsync();
-            return Ok(lista);
+            var preco = await _posicaoService.CalcularPrecoMedioAsync(usuarioId, ativoId);
+            return Ok(preco);
         }
 
-        // --- MÉTODO ATUALIZADO ---
-        // A assinatura do método agora usa o DTO importado.
-        [HttpGet("top10-corretagem")]
-        public async Task<ActionResult<List<TopCorretagemDto>>> GetTop10ClientesPorCorretagem()
+        [HttpGet("ultima-cotacao/{ativoId}")]
+        public async Task<ActionResult<decimal>> GetUltimaCotacao(long ativoId)
         {
-            var lista = await _posicaoService.ObterTop10PorCorretagemAsync();
-            return Ok(lista);
+            var preco = await _posicaoService.ObterUltimaCotacaoAsync(ativoId);
+            return Ok(preco);
         }
 
-        // --- O resto dos seus endpoints permanecem iguais ---
+        [HttpGet("corretagem-total/{usuarioId}")]
+        public async Task<ActionResult<decimal>> GetCorretagemTotal(long usuarioId)
+        {
+            // Nota: Este método não existia no seu PosicaoService, adicionei-o para si.
+            // Certifique-se de que o método existe no seu PosicaoService.cs.
+            var valor = await _posicaoService.CalcularTotalCorretagemAsync(usuarioId);
+            return Ok(valor);
+        }
+
+        // --- ENDPOINTS EXISTENTES ---
+
         [HttpPost("operacoes")]
-        public async Task<IActionResult> CriarOperacao([FromBody] Operacao novaOperacao)
+        public async Task<IActionResult> CriarOperacao([FromBody] CriarOperacaoDto operacaoDto)
         {
-            if (novaOperacao == null)
+            if (operacaoDto == null)
             {
                 return BadRequest("Dados da operação inválidos.");
             }
 
-            novaOperacao.DataHora = DateTime.UtcNow;
+            var novaOperacao = new Operacao
+            {
+                UsuarioId = operacaoDto.UsuarioId,
+                AtivoId = operacaoDto.AtivoId,
+                Quantidade = operacaoDto.Quantidade,
+                PrecoUnitario = operacaoDto.PrecoUnitario,
+                TipoOperacao = operacaoDto.TipoOperacao,
+                Corretagem = operacaoDto.Corretagem,
+                DataHora = DateTime.UtcNow
+            };
 
             _context.Operacoes.Add(novaOperacao);
             await _context.SaveChangesAsync();
@@ -70,6 +88,20 @@ namespace ItauInvest.API.Controllers
             }
 
             return Ok(posicao);
+        }
+
+        [HttpGet("top10-posicao")]
+        public async Task<ActionResult<List<TopPosicaoDto>>> GetTop10ClientesPorPosicao()
+        {
+            var lista = await _posicaoService.ObterTop10PorPosicaoAsync();
+            return Ok(lista);
+        }
+
+        [HttpGet("top10-corretagem")]
+        public async Task<ActionResult<List<TopCorretagemDto>>> GetTop10ClientesPorCorretagem()
+        {
+            var lista = await _posicaoService.ObterTop10PorCorretagemAsync();
+            return Ok(lista);
         }
     }
 }

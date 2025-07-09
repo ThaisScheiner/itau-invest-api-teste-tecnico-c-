@@ -31,6 +31,14 @@ namespace ItauInvest.Application.Services
                 .ToListAsync();
         }
 
+        // Adicione este método ao seu PosicaoService.cs
+        public async Task<decimal> CalcularTotalCorretagemAsync(long usuarioId)
+        {
+            return await _context.Operacoes
+                .Where(o => o.UsuarioId == usuarioId)
+                .SumAsync(o => o.Corretagem);
+        }
+
         // --- MÉTODO ATUALIZADO ---
         // Agora retorna uma lista de TopCorretagemDto a partir do seu novo namespace.
         public async Task<List<TopCorretagemDto>> ObterTop10PorCorretagemAsync()
