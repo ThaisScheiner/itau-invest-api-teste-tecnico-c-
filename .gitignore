@@ -3,6 +3,7 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+<<<<<<< HEAD
 
 # Angular/Node
 /itau-invest-frontend/node_modules/
@@ -11,6 +12,8 @@
 /itau-invest-frontend/coverage/
 /itau-invest-frontend/*.log
 
+=======
+>>>>>>> 23371523dd975b8c8af93d5df1849c5e442bde9e
 # User-specific files
 *.rsuser
 *.suo
