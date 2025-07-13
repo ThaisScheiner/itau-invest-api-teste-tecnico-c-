@@ -1,0 +1,88 @@
+﻿services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-itauinvest
+    restart: always
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: itauinvestdb
+      MYSQL_USER: devuser
+      MYSQL_PASSWORD: devpass
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - itau-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: zookeeper
+    networks:
+      - itau-network
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    networks:
+      - itau-network
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:29092 --list"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-cluster
+      # --- CORREÇÃO APLICADA AQUI ---
+      # O nome da variável foi corrigido de CLISTERS para CLUSTERS
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    networks:
+      - itau-network
+
+  topic-creator:
+    image: confluentinc/cp-kafka:7.6.0
+    networks:
+      - itau-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Aguardando 15 segundos...' &&
+        sleep 15 &&
+        echo 'Criando tópico operacoes-novas...' &&
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic operacoes-novas --partitions 1 --replication-factor 1 &&
+        echo 'Criando tópico cotacoes...' &&
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic cotacoes --partitions 1 --replication-factor 1 &&
+        echo 'Criação de tópicos concluída.'
+      "
+
+volumes:
+  mysql_data:
+
+networks:
+  itau-network:
+    driver: bridge
