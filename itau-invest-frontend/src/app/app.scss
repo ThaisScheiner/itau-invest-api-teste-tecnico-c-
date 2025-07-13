@@ -1,0 +1,111 @@
+:host {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.content {
+  padding: 24px;
+  background-color: #f4f6f8;
+  min-height: calc(100vh - 64px);
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card {
+  border-radius: 8px !important;
+}
+
+.form-container {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.operacao-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  min-height: 100px;
+}
+
+.error-message {
+  color: #c62828;
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #ffebee;
+  border-radius: 4px;
+  border: 1px solid #ef9a9a;
+}
+
+.results-grid {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fafafa;
+}
+
+.result-item {
+  font-size: 1rem;
+  &.p-and-l {
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+}
+
+.result-item span {
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.lucro {
+  color: #2e7d32;
+}
+
+.prejuizo {
+  color: #c62828;
+}
+
+table {
+  width: 100%;
+}
+
+@media (max-width: 960px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+// ========================================================================
+// ARQUIVO: src/styles.scss
+// Estilos globais
+// ========================================================================
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+// Estilo para o snackbar de erro
+.error-snackbar {
+  background-color: #d32f2f;
+  color: white;
+}
